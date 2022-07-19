@@ -8,12 +8,15 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
+contract Pokemon is ERC721Enumerable, Ownable {
 
-    using SafeMath for uint256;
+    using SafeMath for uint;
+    using SafeMath for uint16;
 
     //URI
     string private baseURI;
+
+    uint private attackCooldown;
 
     struct PokemonStats {
         string name;
@@ -44,7 +47,9 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         uint16 versusRemainingLP
     );
 
-    constructor() {
+    constructor(string memory name, string memory symbol, uint _attackCooldown) ERC721(name, symbol) {
+        _transferOwnership(msg.sender);
+        attackCooldown = _attackCooldown;
     }
 
     function mint(string memory _name) public {
@@ -65,16 +70,17 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         pokemon.lifePoint = pokemon.maxLifePoint;
     }
 
-    function _randomNumber(uint256 _minValue, uint256 _maxValue, string memory _salt) internal pure  returns(uint randomNumber) {
+    function _randomNumber(uint256 _minValue, uint256 _maxValue, string memory _salt) internal view returns(uint randomNumber) {
         require(_maxValue > _minValue, "minimal value can't be greater than maximal value");
-        return ((uint(keccak256(msg.sender)) + uint(keccak256(_salt)) + uint(keccak256(block.timestamp))) % (_maxValue - _minValue) + _minValue);
+        return ((uint(keccak256(abi.encodePacked(block.timestamp, _salt, msg.sender)))) % (_maxValue - _minValue) + _minValue);
     }
 
     function startBattle(uint256 _id, uint256 _versusId) public {
+        require(_exists(_versusId), "Wrong versusId : Your target does not exist");
         require(ownerOf(_id) == msg.sender, "Must be the owner");
         require(ownerOf(_versusId) != msg.sender, "Can't be the owner of the ennemy");
-        require(_versusId != _id, "Can't fight himself");
-        require(!pokemonStats[_id].isFighting, "Already fighting");
+        require(!pokemonStats[_id].isFighting, "Your pokemon is already fighting");
+        require(!pokemonStats[_versusId].isFighting, "Your target is already fighting");
 
         pokemonStats[_id].isFighting = true;
         pokemonStats[_id].versusId = _versusId;
@@ -97,8 +103,10 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         require(ownerOf(_id) == msg.sender, "Must be the owner");
         require(pokemonStats[_id].isFighting, "Not in a fight");
         if(pokemonStats[_id].cooldown){
-            require((block.timestamp.trysub(pokemonStats[_id].lastAttack)) > 3600 , "It's your oponent's turn");
+            require( (uint256(block.timestamp) - pokemonStats[_id].lastAttack) > attackCooldown , "It's your oponent's turn");
         }
+
+        require(pokemonStats[_id].attacks[_choice] > 0, "This attack does not exist or have not be learned yet by your pokemon");
 
         if(pokemonStats[pokemonStats[_id].versusId].lifePoint <= pokemonStats[_id].attacks[_choice]) { // victoire
             
@@ -116,7 +124,7 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
             );
         }
         else { // combat continue
-            pokemonStats[pokemonStats[_id].versusId].lifePoint = pokemonStats[pokemonStats[_id].versusId].lifePoint.trySub(pokemonStats[_id].attacks[_choice]);
+            pokemonStats[pokemonStats[_id].versusId].lifePoint = uint16(pokemonStats[pokemonStats[_id].versusId].lifePoint.sub(pokemonStats[_id].attacks[_choice]));
 
             pokemonStats[_id].cooldown = true;
             pokemonStats[_id].lastAttack = block.timestamp;
@@ -125,7 +133,7 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
 
             emit AttackSuccess(
                 pokemonStats[_id].versusId,
-                pokemonStats[_id].attacks[_choice],
+                uint8(pokemonStats[_id].attacks[_choice]),
                 pokemonStats[pokemonStats[_id].versusId].lifePoint
             );
         }        
