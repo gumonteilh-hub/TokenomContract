@@ -19,6 +19,21 @@ async function main() {
 
   await pokemon.deployed();
 
+
+  [owner, user1, user2, user3] = await ethers.getSigners();
+
+  await pokemon.connect(user1).mint("User1-Toke1");
+  await pokemon.connect(user1).mint("User1-Toke2");
+  await pokemon.connect(user1).mint("User1-Toke3");
+
+  await pokemon.connect(user2).mint("User2-Toke1");
+  await pokemon.connect(user2).mint("User2-Toke2");
+  await pokemon.connect(user2).mint("User2-Toke3");
+
+  await pokemon.connect(user3).mint("User3-Toke1");
+  await pokemon.connect(user3).mint("User3-Toke2");
+  await pokemon.connect(user3).mint("User3-Toke3");
+
   console.log("pokemon deployed to:", pokemon.address);
 }
 
