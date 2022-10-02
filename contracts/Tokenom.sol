@@ -51,7 +51,7 @@ contract Tokenom is ERC721Enumerable, Ownable {
         string memory name,
         string memory symbol,
         uint256 _attackCooldown,
-        int32 _maxSpecies
+        uint32 _maxSpecies
     ) ERC721(name, symbol) {
         _transferOwnership(msg.sender);
         attackCooldown = _attackCooldown;
@@ -63,22 +63,22 @@ contract Tokenom is ERC721Enumerable, Ownable {
     }
 
     function _mint(address _to, string memory _name) internal {
-        require(balanceOf(_to) + 1 <= 6, "Cant have more than 6 Pokemon");
+        require(balanceOf(_to) + 1 <= 6, "Cant have more than 6 Tokenom");
         uint256 tokenId = totalSupply() + 1;
         _safeMint(_to, tokenId);
 
-        PokemonStats storage pokemon = pokemonStats[tokenId];
-        pokemon.name = _name;
-        pokemon.level = 1;
-        pokemon.maxLifePoint = uint16(
+        TokenomStats storage tokenom = tokenomStats[tokenId];
+        tokenom.name = _name;
+        tokenom.level = 1;
+        tokenom.maxLifePoint = uint16(
             _randomNumber(10, 20, Strings.toString(tokenId))
         );
-        Attack storage firstAttack = pokemonStats[tokenId].attacks[0];
+        Attack storage firstAttack = tokenomStats[tokenId].attacks[0];
         firstAttack.name = "charge";
         firstAttack.damage = 5;
         firstAttack.precision = 75;
-        pokemon.isFighting = false;
-        pokemon.lifePoint = pokemon.maxLifePoint;
+        tokenom.isFighting = false;
+        tokenom.lifePoint = tokenom.maxLifePoint;
         tokenom.species = uint32(_randomNumber(1, maxSpecies, Strings.toString(tokenId)));
     }
 
@@ -109,22 +109,22 @@ contract Tokenom is ERC721Enumerable, Ownable {
             "Can't be the owner of the ennemy"
         );
         require(
-            !pokemonStats[_id].isFighting,
-            "Your pokemon is already fighting"
+            !tokenomStats[_id].isFighting,
+            "Your tokenom is already fighting"
         );
         require(
-            !pokemonStats[_versusId].isFighting,
+            !tokenomStats[_versusId].isFighting,
             "Your target is already fighting"
         );
 
-        pokemonStats[_id].isFighting = true;
-        pokemonStats[_id].versusId = _versusId;
-        pokemonStats[_id].cooldown = true;
-        pokemonStats[_id].lastAttack = block.timestamp;
+        tokenomStats[_id].isFighting = true;
+        tokenomStats[_id].versusId = _versusId;
+        tokenomStats[_id].cooldown = true;
+        tokenomStats[_id].lastAttack = block.timestamp;
 
-        pokemonStats[pokemonStats[_id].versusId].isFighting = true;
-        pokemonStats[pokemonStats[_id].versusId].versusId = _id;
-        pokemonStats[pokemonStats[_id].versusId].cooldown = false;
+        tokenomStats[tokenomStats[_id].versusId].isFighting = true;
+        tokenomStats[tokenomStats[_id].versusId].versusId = _id;
+        tokenomStats[tokenomStats[_id].versusId].cooldown = false;
 
         emit BattleBegin(_versusId);
     }
@@ -133,68 +133,68 @@ contract Tokenom is ERC721Enumerable, Ownable {
      */
     function attack(uint256 _id, uint8 _choice) public {
         require(ownerOf(_id) == msg.sender, "Must be the owner");
-        require(pokemonStats[_id].isFighting, "Not in a fight");
-        if (pokemonStats[_id].cooldown) {
+        require(tokenomStats[_id].isFighting, "Not in a fight");
+        if (tokenomStats[_id].cooldown) {
             require(
-                (uint256(block.timestamp) - pokemonStats[_id].lastAttack) >
+                (uint256(block.timestamp) - tokenomStats[_id].lastAttack) >
                     attackCooldown,
                 "It's your oponent's turn"
             );
         }
 
         require(
-            pokemonStats[_id].attacks[_choice].damage > 0,
-            "This attack does not exist or have not be learned yet by your pokemon"
+            tokenomStats[_id].attacks[_choice].damage > 0,
+            "This attack does not exist or have not be learned yet by your tokenom"
         );
 
         if (
-            _randomNumber(0, 100, pokemonStats[_id].attacks[_choice].name) <
-            pokemonStats[_id].attacks[_choice].precision
+            _randomNumber(0, 100, tokenomStats[_id].attacks[_choice].name) <
+            tokenomStats[_id].attacks[_choice].precision
         ) {
             //attack Success
             if (
-                pokemonStats[pokemonStats[_id].versusId].lifePoint <=
-                pokemonStats[_id].attacks[_choice].damage
+                tokenomStats[tokenomStats[_id].versusId].lifePoint <=
+                tokenomStats[_id].attacks[_choice].damage
             ) {
                 // victoire
-                pokemonStats[_id].level++;
-                pokemonStats[_id].maxLifePoint += 5;
+                tokenomStats[_id].level++;
+                tokenomStats[_id].maxLifePoint += 5;
 
-                pokemonStats[_id].lifePoint = pokemonStats[_id].maxLifePoint;
-                pokemonStats[_id].isFighting = false;
-                pokemonStats[pokemonStats[_id].versusId]
-                    .lifePoint = pokemonStats[pokemonStats[_id].versusId]
+                tokenomStats[_id].lifePoint = tokenomStats[_id].maxLifePoint;
+                tokenomStats[_id].isFighting = false;
+                tokenomStats[tokenomStats[_id].versusId]
+                    .lifePoint = tokenomStats[tokenomStats[_id].versusId]
                     .maxLifePoint;
-                pokemonStats[pokemonStats[_id].versusId].isFighting = false;
+                tokenomStats[tokenomStats[_id].versusId].isFighting = false;
 
                 emit BattleWin(
-                    pokemonStats[_id].versusId,
-                    pokemonStats[_id].level
+                    tokenomStats[_id].versusId,
+                    tokenomStats[_id].level
                 );
             } else {
                 // combat continue
-                pokemonStats[pokemonStats[_id].versusId].lifePoint = uint16(
-                    pokemonStats[pokemonStats[_id].versusId].lifePoint.sub(
-                        pokemonStats[_id].attacks[_choice].damage
+                tokenomStats[tokenomStats[_id].versusId].lifePoint = uint16(
+                    tokenomStats[tokenomStats[_id].versusId].lifePoint.sub(
+                        tokenomStats[_id].attacks[_choice].damage
                     )
                 );
 
-                pokemonStats[_id].cooldown = true;
-                pokemonStats[_id].lastAttack = block.timestamp;
+                tokenomStats[_id].cooldown = true;
+                tokenomStats[_id].lastAttack = block.timestamp;
 
-                pokemonStats[pokemonStats[_id].versusId].cooldown = false;
+                tokenomStats[tokenomStats[_id].versusId].cooldown = false;
 
                 emit AttackSuccess(
-                    pokemonStats[_id].versusId,
-                    uint8(pokemonStats[_id].attacks[_choice].damage),
-                    pokemonStats[pokemonStats[_id].versusId].lifePoint
+                    tokenomStats[_id].versusId,
+                    uint8(tokenomStats[_id].attacks[_choice].damage),
+                    tokenomStats[tokenomStats[_id].versusId].lifePoint
                 );
             }
         } else {
             // attack failed
             emit AttackFailed(
-                pokemonStats[_id].versusId,
-                pokemonStats[pokemonStats[_id].versusId].lifePoint
+                tokenomStats[_id].versusId,
+                tokenomStats[tokenomStats[_id].versusId].lifePoint
             );
         }
     }
@@ -206,9 +206,9 @@ contract Tokenom is ERC721Enumerable, Ownable {
         uint256 damage,
         uint256 precision)
     {
-        require(pokemonStats[tokenId].attacks[attackId].damage > 0, "this tokenom doesn't know this attack");
+        require(tokenomStats[tokenId].attacks[attackId].damage > 0, "this tokenom doesn't know this attack");
 
-        Attack memory atk = pokemonStats[tokenId].attacks[attackId];
+        Attack memory atk = tokenomStats[tokenId].attacks[attackId];
 
         return (atk.name, atk.damage, atk.precision);
     }
@@ -246,8 +246,8 @@ contract Tokenom is ERC721Enumerable, Ownable {
         return maxSpecies;
     }
 
-    function tokenURI(uint256 tokenId) external view returns (string memory) {
-        return string.concat(baseURI, tokenomStats[tokenId].species, ".json");
+    function tokenURI(uint256 tokenId) public override view returns (string memory) {
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenomStats[tokenId].species), ".png"));
     }
 
 }

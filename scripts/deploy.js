@@ -19,7 +19,7 @@ async function main() {
 
   await tokenom.deployed();
 
-  tokenom.setBaseURI("");
+  await tokenom.setBaseURI("ipfs/QmQKR4CeQ3sPvxX53eZ4AX7UQ9TQaW8TxACSKzRFL5bqwd/");
 
   [owner, user1, user2, user3] = await ethers.getSigners();
 
