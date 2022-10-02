@@ -14,27 +14,28 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const Pokemon = await hre.ethers.getContractFactory("Pokemon");
-  const pokemon = await Pokemon.deploy("TokeNom", "TKM", 60);
+  const Tokenom = await hre.ethers.getContractFactory("Tokenom");
+  const tokenom = await Tokenom.deploy("TokeNom", "TKM", 60, 5);
 
-  await pokemon.deployed();
+  await tokenom.deployed();
 
+  tokenom.setBaseURI("");
 
   [owner, user1, user2, user3] = await ethers.getSigners();
 
-  await pokemon.connect(user1).mint("User1-Toke1");
-  await pokemon.connect(user1).mint("User1-Toke2");
-  await pokemon.connect(user1).mint("User1-Toke3");
+  await tokenom.connect(user1).mint("User1-Toke1");
+  await tokenom.connect(user1).mint("User1-Toke2");
+  await tokenom.connect(user1).mint("User1-Toke3");
 
-  await pokemon.connect(user2).mint("User2-Toke1");
-  await pokemon.connect(user2).mint("User2-Toke2");
-  await pokemon.connect(user2).mint("User2-Toke3");
+  await tokenom.connect(user2).mint("User2-Toke1");
+  await tokenom.connect(user2).mint("User2-Toke2");
+  await tokenom.connect(user2).mint("User2-Toke3");
 
-  await pokemon.connect(user3).mint("User3-Toke1");
-  await pokemon.connect(user3).mint("User3-Toke2");
-  await pokemon.connect(user3).mint("User3-Toke3");
+  await tokenom.connect(user3).mint("User3-Toke1");
+  await tokenom.connect(user3).mint("User3-Toke2");
+  await tokenom.connect(user3).mint("User3-Toke3");
 
-  console.log("pokemon deployed to:", pokemon.address);
+  console.log("tokenom deployed to:", tokenom.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
