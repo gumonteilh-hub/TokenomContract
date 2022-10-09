@@ -14,7 +14,7 @@ contract Tokenom is ERC721Enumerable, Ownable {
     //URI
     string private baseURI;
 
-    uint256 private attackCooldown;
+    uint256 public attackCooldown;
 
     struct Attack {
         string name;
@@ -249,5 +249,4 @@ contract Tokenom is ERC721Enumerable, Ownable {
     function tokenURI(uint256 tokenId) public override view returns (string memory) {
         return string(abi.encodePacked(baseURI, Strings.toString(tokenomStats[tokenId].species), ".png"));
     }
-
 }
